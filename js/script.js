@@ -154,7 +154,7 @@ function movePieceLANBased(movesArray, moveNum) {
     let fromStr = moveParts[0];
     let toStr = moveParts[1];
     
-    if (fromStr.search(/^[NBRQ][A-H][1-8]/) != -1) 
+    if (fromStr.search(/^[NBRQK][A-H][1-8]/) != -1) 
         fromStr = fromStr.slice(1);
 
     let fromX = fromStr.codePointAt(0) - 'A'.codePointAt(0);
