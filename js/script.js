@@ -179,7 +179,7 @@ function movePieceLANBased(movesArray, moveNum) {
         let piece1 = document.querySelector(`.main-block>.block:nth-child(${fromY*8 + fromX + 1})>i`);
         let piece2 = document.querySelector(`.main-block>.block:nth-child(${toY*8 + toX + 1})>i`);        
         if (piece1.classList.contains(PIECES_CLASS_MAP['PAWN']) && piece2 == null) {
-            let capturedX = tpX;
+            let capturedX = toX;
             let capturedY = fromY;
             let capturedPawn = document.querySelector(`.main-block>.block:nth-child(${capturedY*8 + capturedX + 1})>i`);
             capturedPawn.remove();
