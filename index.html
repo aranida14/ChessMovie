@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>ChessMovie</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <!-- <link rel="script" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/js/all.min.js"> -->
+</head>
+<body>
+    <div class="main-block"></div>
+    <div id='movesContainer'></div>
+    <form id="movesinput">
+        <label for='movestext'><b>Введите запись партии:</b></label>
+        <textarea name="textarea" id="movestext" cols="20" rows="10"></textarea>
+        <input type="button" value="Отправить" onclick="addMovesList()"/>
+    </form>
+<script src='js/script.js'></script>    
+</body>
+</html>

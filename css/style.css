@@ -1,0 +1,61 @@
+.main-block {
+    width: 480px;
+    height: 480px;
+    margin: 30px;
+    border: 1px solid black;
+    float: left;
+}
+
+.block {
+    width: 60px;
+    height: 60px;
+    float: left;
+    text-align: center;    
+    font-size: 50px;
+}
+
+.dark-block {
+    background: #804545;
+}
+
+.light-block {
+    background: #ece0cc;
+}
+
+.fas {
+    text-shadow: -1px 0 black, 0 1px black, 1px 0 black, 0 -1px black;
+}
+
+#movesinput {
+    float: left;
+    margin: 30px;
+}
+
+#movesinput > *{
+    display: block;
+    margin-bottom: 10px;
+}
+
+@media screen and (max-width: 480px) {
+    #movesinput {
+        clear: left;
+    }
+}
+
+span {
+    cursor:pointer;
+    color:#0000d8;
+    padding-right: 5px;
+}
+
+span:hover {
+    color:#3268fc;
+}
+
+#movesContainer {
+    float: left;
+    margin-top: 30px;
+    /* border: solid 1px black;
+    min-width: 20px;
+    min-height: 100px; */
+}
