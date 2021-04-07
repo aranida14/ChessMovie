@@ -11,7 +11,8 @@ const PIECES_SYMBOL_MAP = {
     N: 'KNIGHT', 
     B: 'BISHOP', 
     R: 'ROOK', 
-    K: 'KING'
+    K: 'KING',
+    Q: 'QUEEN'
 }
 
 let movesArray = [];
