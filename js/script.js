@@ -220,7 +220,7 @@ function addMovesList() {
     if (!text) return;
     
     // let moves = text.split(/\d\.\s+/);
-    let moves = text.split(/\d\.\s*/);
+    let moves = text.split(/\d+\.\s*/);
     // console.log(moves);
 
     moves = moves.filter(move => move.length > 0); //удаляем пустые строки
