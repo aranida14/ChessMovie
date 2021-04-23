@@ -15,10 +15,16 @@ const PIECES_SYMBOL_MAP = {
     Q: 'QUEEN'
 }
 
+// данные текущей партии:
 let movesArray = [];
+let currentMoveNum = 0;
+let capturedPieces = {};
+let inputRangeSlided = false;
+let timer;
 
 function drawBoard() {
     let mainBlock = document.querySelector('.main-block');
+    mainBlock.innerHTML = '';
     let block;
     let isWhite = true;
     for (let i = 0; i < 8; i++) {            
@@ -63,6 +69,30 @@ function drawBoard() {
 }
 drawBoard();
 
+function addGamesList(gamesArray) {
+    let gamesList = document.querySelector('#gamesList');
+    let list = document.createElement('ul');
+
+    gamesArray.forEach(function(game, index) {
+
+        let li = document.createElement('li');
+        li.innerHTML = game.name;
+        li.id = 'game' + index;
+        li.addEventListener('click', fillMovesTextArea);
+
+        list.appendChild(li);
+    });
+    gamesList.appendChild(list);
+}
+addGamesList(games);
+
+function fillMovesTextArea() {
+    let gameId = this.id.split('game')[1];
+    let input = document.querySelector('#movestext');
+    input.value = games[gameId].notation;
+    addMovesList();
+}
+
 function drawPiece(piece, x, y, isWhite) {
     // <i class="fas fa-chess-pawn"></i>
     let pieceElem = document.createElement('i');
@@ -70,37 +100,6 @@ function drawPiece(piece, x, y, isWhite) {
     let block = document.querySelector(`.main-block>.block:nth-child(${y*8 + x + 1})`);
     block.appendChild(pieceElem);
 }
-//drawPiece('ROOK',7,7, true);
-
-/* function drawAllPieces() {
-    for (let i = 0; i < 8; i++) {
-        drawPiece('PAWN', i, 1, false);
-        drawPiece('PAWN', i, 6, true);
-    }
-
-    drawPiece('ROOK', 0, 0, false);
-    drawPiece('ROOK', 7, 0, false);
-    drawPiece('ROOK', 0, 7, true);
-    drawPiece('ROOK', 7, 7, true);
-
-    drawPiece('KNIGHT', 1, 0, false);
-    drawPiece('KNIGHT', 6, 0, false);
-    drawPiece('KNIGHT', 1, 7, true);
-    drawPiece('KNIGHT', 6, 7, true);
-    
-    drawPiece('BISHOP', 2, 0, false);
-    drawPiece('BISHOP', 5, 0, false);
-    drawPiece('BISHOP', 2, 7, true);
-    drawPiece('BISHOP', 5, 7, true);
-    
-    drawPiece('QUEEN', 3, 0, false);
-    drawPiece('QUEEN', 3, 7, true);
-    
-    drawPiece('KING', 4, 0, false);
-    drawPiece('KING', 4, 7, true);
-
-} */
-// drawAllPieces();
 
 function movePieceToXY(fromX, fromY, toX, toY) {
     let piece = document.querySelector(`.main-block>.block:nth-child(${fromY*8 + fromX + 1})>i`);
@@ -115,6 +114,46 @@ function movePieceToXY(fromX, fromY, toX, toY) {
 // movePieceToXY(4,1,4,3);
 // movePieceToXY(3,6,3,4);
 // movePieceToXY(4,3,3,4);
+
+function parseNotationMove(moveDescription) {
+
+    moveDescription = moveDescription.toUpperCase();
+    let moveParts = (moveDescription.indexOf('-') != -1) ? moveDescription.split('-') : moveDescription.split('X');
+
+    if (moveParts.length < 2) {
+        throw ("Invalid move description: " + moveDescription);
+    } 
+
+    let fromStr = moveParts[0];
+    let toStr = moveParts[1];
+    
+    let pieceName = "PAWN";
+    if (fromStr.search(/^[NBRQK][A-H][1-8]/) != -1) {
+        pieceName = PIECES_SYMBOL_MAP[fromStr.charAt(0)]
+        fromStr = fromStr.slice(1);
+    }        
+
+    let fromX = fromStr.codePointAt(0) - 'A'.codePointAt(0);
+    let fromY = 8 - fromStr.charAt(1);
+
+    let destMatchRes = toStr.match(/[A-H][1-8]([NBRQ])?/);
+    if (destMatchRes == null) 
+        throw ("Invalid move description: " + moveDescription);
+    let toStrCleared = destMatchRes[0];
+    let promotionPiece = destMatchRes[1];
+    let toX = toStrCleared.codePointAt(0) - 'A'.codePointAt(0);
+    let toY = 8 - toStrCleared.charAt(1);
+
+    let result = {
+        pieceName: pieceName,
+        fromX: fromX,
+        fromY: fromY,
+        toX: toX,
+        toY: toY,
+        promotionPiece: promotionPiece
+    }
+    return result;
+}
 
 function movePieceLANBased(movesArray, moveNum) {
     let moveDesc = movesArray[moveNum-1].toUpperCase();
@@ -146,45 +185,45 @@ function movePieceLANBased(movesArray, moveNum) {
         return;
     }
 
-    let moveParts = (moveDesc.indexOf('-') != -1) ? moveDesc.split('-') : moveDesc.split('X');
+    let moveParsed = parseNotationMove(moveDesc);
+    let fromX = moveParsed.fromX;
+    let fromY = moveParsed.fromY;
+    let toX = moveParsed.toX;
+    let toY = moveParsed.toY;
+    let promotionPiece = moveParsed.promotionPiece;
 
-    if (moveParts.length < 2) {
-        throw ("Invalid move description: " + moveDesc);
-    } 
+    if (moveDesc.search(/^[NBRQK]?[A-H][1-8]X[A-H][1-8]/) != -1) { //взятие
 
-    let fromStr = moveParts[0];
-    let toStr = moveParts[1];
-    
-    if (fromStr.search(/^[NBRQK][A-H][1-8]/) != -1) 
-        fromStr = fromStr.slice(1);
+        let pieceFrom = document.querySelector(`.main-block>.block:nth-child(${fromY*8 + fromX + 1})>i`);
+        let pieceTo = document.querySelector(`.main-block>.block:nth-child(${toY*8 + toX + 1})>i`);
 
-    let fromX = fromStr.codePointAt(0) - 'A'.codePointAt(0);
-    // console.log(fromX);
-    let fromY = 8 - fromStr.charAt(1);
-    // console.log(fromY);
-
-    let destMatchRes = toStr.match(/[A-H][1-8]([NBRQ])?/);
-    // console.log(destMatchRes);
-    if (destMatchRes == null) 
-        throw ("Invalid move description: " + moveDesc);
-    let toStrCleared = destMatchRes[0];
-    let promotionPiece = destMatchRes[1];
-    let toX = toStrCleared.codePointAt(0) - 'A'.codePointAt(0);
-    // console.log(toX);
-    let toY = 8 - toStrCleared.charAt(1);
-    // console.log(toY);
-
-    // взятие на проходе
-    if (moveDesc.search(/^[A-H][1-8]X[A-H][1-8]/) != -1) {
-        let piece1 = document.querySelector(`.main-block>.block:nth-child(${fromY*8 + fromX + 1})>i`);
-        let piece2 = document.querySelector(`.main-block>.block:nth-child(${toY*8 + toX + 1})>i`);        
-        if (piece1.classList.contains(PIECES_CLASS_MAP['PAWN']) && piece2 == null) {
+        // взятие на проходе
+        if (pieceFrom.classList.contains(PIECES_CLASS_MAP['PAWN']) && pieceTo == null) {
             let capturedX = toX;
             let capturedY = fromY;
             let capturedPawn = document.querySelector(`.main-block>.block:nth-child(${capturedY*8 + capturedX + 1})>i`);
             capturedPawn.remove();
             movePieceToXY(fromX, fromY, toX, toY);
+            capturedPieces[moveNum] = {
+                type: 'PAWN',
+                isWhite: (moveNum % 2 == 0),
+                x: capturedX,
+                y: capturedY
+            }
             return;
+        }
+
+        // add captured piece
+        for (let piece in PIECES_CLASS_MAP) {
+            if ( pieceTo.classList.contains(PIECES_CLASS_MAP[piece]) ) {
+                capturedPieces[moveNum] = {
+                    type: piece,
+                    isWhite: (moveNum % 2 == 0),
+                    x: toX,
+                    y: toY
+                }
+                break;
+            }   
         }
     }
 
@@ -202,10 +241,57 @@ function movePieceLANBased(movesArray, moveNum) {
 
 }
 
-// movePieceLANBased(
-//     ["f2-f4", "e7-e5", "f4xe5", "d7-d6", "e5xd6", "Bf8xd6", "g2-g3", "Qd8-g5", "Ng1-f3", "Qg5xg3+", "h2xg3", "Bd6xg3#"],
-//     6
-// );
+function cancelMoveLANBased(movesArray, moveNum) {
+
+    let moveDesc = movesArray[moveNum-1].toUpperCase();
+    // особые случаи: рокировка, превращение пешки, взятие на проходе
+
+    if (moveDesc == 'O-O') {
+        if (moveNum % 2) {
+            //белые
+            movePieceToXY(6,7,4,7);
+            movePieceToXY(5,7,7,7);
+        } else {
+            //черные
+            movePieceToXY(6,0,4,0);
+            movePieceToXY(5,0,7,0);
+        }
+        return;
+    }
+    if (moveDesc == 'O-O-O') {
+        if (moveNum % 2) {
+            //белые
+            movePieceToXY(2,7,4,7);
+            movePieceToXY(3,7,0,7);
+        } else {
+            //черные
+            movePieceToXY(2,0,4,0);
+            movePieceToXY(3,0,0,0);
+        }
+        return;
+    }
+
+    let moveParsed = parseNotationMove(moveDesc);
+    let fromX = moveParsed.fromX;
+    let fromY = moveParsed.fromY;
+    let toX = moveParsed.toX;
+    let toY = moveParsed.toY;
+    let promotionPiece = moveParsed.promotionPiece;
+
+    if (promotionPiece) {
+        let piece = document.querySelector(`.main-block>.block:nth-child(${toY*8 + toX + 1})>i`);        
+        piece.classList.replace(PIECES_CLASS_MAP[PIECES_SYMBOL_MAP[promotionPiece]], PIECES_CLASS_MAP['PAWN']);
+    }
+    
+    movePieceToXY(toX, toY, fromX, fromY);
+    if (moveNum in capturedPieces ) {
+        let captured = capturedPieces[moveNum];
+        drawPiece(captured.type, captured.x, captured.y, captured.isWhite);
+        delete capturedPieces[moveNum];
+    }
+
+
+}
 
 function addMovesList() {
     let movesContainer = document.querySelector('#movesContainer');
@@ -213,11 +299,21 @@ function addMovesList() {
     if (movesList) {
         movesList.remove();
         movesArray = [];
+        capturedPieces = {};
+        drawBoard();
+        currentMoveNum = 0;
     }
+
+    let inputRange = document.querySelector('#movesRange');
+    let playButton = document.querySelector('#playButton');
 
     let input = document.querySelector('#movestext');
     let text = input.value.trim();
-    if (!text) return;
+    if (!text) {
+        inputRange.disabled = true;
+        playButton.disabled = true;
+        return;
+    }
     
     // let moves = text.split(/\d\.\s+/);
     let moves = text.split(/\d+\.\s*/);
@@ -259,9 +355,64 @@ function addMovesList() {
     });
     movesContainer.appendChild(movesList);
 
-    // console.log(movesArray);
+    inputRange.max = movesArray.length;
+    inputRange.disabled = false;
+    inputRange.oninput = drawPosition;
+    inputRange.value = 0;
+
+    playButton.disabled = false;
+    playButton.addEventListener('click', playGame);
+}
+
+function playGame() {
+    let inputRange = document.querySelector('#movesRange');
+    let button = document.querySelector('#playButton');
+    button.disabled = true;
+    let i = currentMoveNum, tick = 1000;
+    (function() {
+        if (i < movesArray.length && !inputRangeSlided) {
+            i++;
+            console.log(`Номер хода: ${i}`)
+            movePieceLANBased(movesArray, i);
+            currentMoveNum = i;
+            inputRange.value = currentMoveNum;
+            timer = setTimeout(arguments.callee, tick);
+        } else {
+            button.disabled = false;
+        }
+    })();
 }
 
 function drawPosition(ev) {
-    alert(`Номер хода: ${this.id.split('-').pop()}`);
+    // console.log(ev);
+    let moveNum;
+    let inputRange = document.querySelector('#movesRange');
+    if (ev.target.id == 'movesRange') {
+        moveNum = ev.target.value;
+        inputRangeSlided = true;
+        clearTimeout(timer);
+        let button = document.querySelector('#playButton');
+        button.disabled = false;
+    } else {
+        moveNum = this.id.split('-').pop();
+    }
+    console.log(`Номер хода: ${moveNum}`);
+    
+    if (moveNum > currentMoveNum) {
+        for (let i = currentMoveNum; i < moveNum; i++) {
+            movePieceLANBased(movesArray, i+1);
+            currentMoveNum = i+1;
+        }
+    } else {
+        for (let i = currentMoveNum; i > moveNum; i--) {
+            cancelMoveLANBased(movesArray, i, capturedPieces);
+            currentMoveNum = i-1;
+        }
+    }
+    if (ev.target.id != 'movesRange') {
+        inputRange.value = currentMoveNum;
+    } else {
+        inputRangeSlided = false;
+    }
+    
 }

@@ -8,13 +8,24 @@
     <!-- <link rel="script" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/js/all.min.js"> -->
 </head>
 <body>
-    <div class="main-block"></div>
+    <div id="boardBlock">
+        <div class="main-block"></div>
+        <div id="playBox">
+            <input type="range" id="movesRange" name="movesRange" min="0" disabled="true" value="0">
+            <input type="button" id="playButton" value="Показать ход игры" disabled/>
+        </div>
+    </div>
+    
     <div id='movesContainer'></div>
     <form id="movesinput">
         <label for='movestext'><b>Введите запись партии:</b></label>
-        <textarea name="textarea" id="movestext" cols="20" rows="10"></textarea>
-        <input type="button" value="Отправить" onclick="addMovesList()"/>
+        <textarea name="textarea" id="movestext" cols="20" rows="10" oninput="addMovesList()"></textarea>
+        <!-- <input type="button" value="Отправить" onclick="addMovesList()"/> -->
     </form>
+    <div id='gamesList'>
+        <h1>Шахматные партии</h1>
+    </div>
+<script src="js/gameData.js"></script>
 <script src='js/script.js'></script>    
 </body>
 </html>
